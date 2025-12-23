@@ -29,7 +29,7 @@ new Elysia()
   // USER ROUTES
   .group("/api/v1", (user) =>
     user
-      .use(jwtPublicAuthPlugin)
+      // .use(jwtPublicAuthPlugin)
       .use(document)
       .use(chat)
   )
