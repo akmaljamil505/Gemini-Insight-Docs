@@ -8,18 +8,20 @@ import DocumentModel from "./model";
 import NotFoundException from "../../lib/exception/not-found.exception";
 
 export default class DocumentService {
-    static async create(body : DocumentModel.CreateDocumentBody) {
+    
+     static async create(body : DocumentModel.CreateDocumentBody) {
+          await db.transaction(async (trx) => {
+               const { title, file } = body;
+               const signedUrl = await SupabaseStorage.generateUploadSignedUrl(file.name);
+               const filePath = await SupabaseStorage.uploadFile(file, file.name, signedUrl);
+               const version = Date.now();
+               const [document] = await trx.insert(documentSchema).values({
+                    file_path : filePath,
+                    title : title,
+                    version,
+               }).returning();
 
-          const { title, file } = body;
-          const signedUrl = await SupabaseStorage.generateUploadSignedUrl(file.name);
-          const filePath = await SupabaseStorage.uploadFile(file, file.name, signedUrl);
-          const version = Date.now();
-          const [document] = await db.insert(documentSchema).values({
-            file_path : filePath,
-            title : title,
-            version,
-          }).returning();
-              const contents = [
+               const contents = [
                     { text: "Extract all text, including tables and OCR images to string." },
                     {
                          inlineData: {
@@ -29,31 +31,32 @@ export default class DocumentService {
                     }
                ];
 
-          const response = await Gemini.generateContent(contents);
-          if (!response.text) {
-               throw new Error('Failed to extract text from PDF');
-          }
-          const chunks = this.chunkText(response.text);
-          const resultEmbeddings = await Gemini.embeddingContent(chunks);
-          if (!resultEmbeddings.embeddings) {
-               throw new Error('Failed to generate embeddings');
-          }
+               const response = await Gemini.generateContent(contents);
+               if (!response.text) {
+                    throw new Error('Failed to extract text from PDF');
+               }
+               const chunks = this.chunkText(response.text);
+               const resultEmbeddings = await Gemini.embeddingContent(chunks);
+               if (!resultEmbeddings.embeddings) {
+                    throw new Error('Failed to generate embeddings');
+               }
 
-          if(chunks.length !== resultEmbeddings.embeddings.length) {
-               throw new Error('Embeddings length does not match chunks length');
-          }
+               if(chunks.length !== resultEmbeddings.embeddings.length) {
+                    throw new Error('Embeddings length does not match chunks length');
+               }
 
-          const embeddings = resultEmbeddings.embeddings;
+               const embeddings = resultEmbeddings.embeddings;
 
-          type NewDocumentChunk = typeof documentChunksSchema.$inferInsert;
-          const documentChunks : NewDocumentChunk[] = chunks.map((chunk, index) => ({
-               document_id : document.id,
-               content : chunk,
-               embedding : embeddings[index].values,
-               version : version
-          }));
+               type NewDocumentChunk = typeof documentChunksSchema.$inferInsert;
+               const documentChunks : NewDocumentChunk[] = chunks.map((chunk, index) => ({
+                    document_id : document.id,
+                    content : chunk,
+                    embedding : embeddings[index].values,
+                    version : version
+               }));
 
-          await db.insert(documentChunksSchema).values(documentChunks);
+               await trx.insert(documentChunksSchema).values(documentChunks);
+          })
     }
 
     static async getSignUrlFileDocument(documentId: string) {

@@ -14,9 +14,7 @@ export default class AuthService {
     static async signIn(body: AuthModel.SignInBody): Promise<AuthModel.SignInResponse> {
         const { access_token, refresh_token, user } = await db.transaction(async (trx) => {
 
-            db.select().from(userSchema).where(eq(userSchema.email, body.email)).for('update');
-
-            const [user] = await trx.select().from(userSchema).where(eq(userSchema.email, body.email));
+            const [user] = await trx.select().from(userSchema).where(eq(userSchema.email, body.email)).for('update');
             if (!user) {
                 throw new AuthenticationException("Wrong email or password");
             }
@@ -30,6 +28,7 @@ export default class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                id: user.id
             }
 
             await trx.delete(sessionSchema).where(eq(sessionSchema.userId, user.id));
@@ -74,6 +73,7 @@ export default class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                id: user.id
             }
 
             const access_token = JwtHelper.generateToken(jwtPayload);

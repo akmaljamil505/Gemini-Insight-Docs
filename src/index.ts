@@ -6,8 +6,10 @@ import { user } from "./modules/user";
 import { jwtAdminAuthPlugin, jwtPublicAuthPlugin } from "./lib/plugins/jwt-auth.plugin";
 import { auth } from "./modules/auth";
 import { document } from "./modules/document";
-import { chat } from "./modules/chat";
+import { chatSocket } from "./modules/chat";
 import cors from "@elysiajs/cors";
+import conversationRoute from "./modules/conversation";
+import { message } from "./modules/message";
 
 new Elysia()
   .use(cors({
@@ -29,9 +31,11 @@ new Elysia()
   // USER ROUTES
   .group("/api/v1", (user) =>
     user
-      // .use(jwtPublicAuthPlugin)
+      .use(jwtPublicAuthPlugin)
       .use(document)
-      .use(chat)
+      .use(chatSocket)
+      .use(message)
+      .use(conversationRoute)
   )
 
   // PUBLIC ROUTES

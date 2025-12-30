@@ -43,6 +43,13 @@
       "when": 1764595956272,
       "tag": "0005_rapid_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767067968138,
+      "tag": "0006_omniscient_the_hunter",
+      "breakpoints": true
     }
   ]
 }

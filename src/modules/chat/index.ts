@@ -1,16 +1,17 @@
-import Elysia, { t } from "elysia"
-import ChatModel from "./model"
+import Elysia from "elysia";
+import ChatModel from "./model";
 import ChatService from "./service";
 
-export const chat = new Elysia({
+export const chatSocket = new Elysia({
 })
-    .ws('/ws', {
+    .ws('/socket', {
         body: ChatModel.chatRequest,
-        async message(ws, { message }) {
-            const response = await ChatService.generateChatWithGemini({ message });
+        async message(ws, { message, conversation_id }) {
+            const response = await ChatService.generateChatWithGemini({ message, conversation_id });
             ws.send({
                 message: response,
                 time: Date.now()
             })
         }
     })
+

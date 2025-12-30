@@ -1,8 +1,11 @@
-import { pgTable, text } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { baseSchema } from "./base.schema";
+import { conversationSchema } from "./conversation.schema";
+import { roleEnum } from "./user.schema";
 
 export const messageSchema = pgTable("messages", {
   ...baseSchema,
-  message_type : text("message_type").notNull(),
-  user_id     : text("user_id").notNull(),
+  conversation_id : uuid("conversation_id").references(() => conversationSchema.id),
+  role : roleEnum().notNull(),
+  message : text("message").notNull(),
 });

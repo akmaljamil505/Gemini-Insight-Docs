@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai"
+import { Content, GoogleGenAI } from "@google/genai"
 import { geminiConfig } from "../../config/gemini.config"
 import GeminiConstant from "../constant/gemini.constant";
 
@@ -25,12 +25,13 @@ namespace Gemini {
         contents: contents,
     })
 
-    export const generateChat = (model: string = GeminiConstant.COMMON_MODEL) =>
+    export const generateChat = (history ?: Content[], model: string = GeminiConstant.COMMON_MODEL) =>
          ai.chats.create({
             model: model,
             config : {
                 temperature: 0.5,
             },
+            // history : history
     })
 
 }

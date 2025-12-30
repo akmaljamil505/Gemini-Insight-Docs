@@ -3,7 +3,7 @@ import { baseSchema } from "./base.schema";
 import DB_CONSTANT from "../../constant/db.constant";
 import RoleConstant from "../../constant/role.constant";
 
-export const roleEnum = pgEnum('user_role',[RoleConstant.USER, RoleConstant.ADMIN]);
+export const roleEnum = pgEnum('user_role',[RoleConstant.USER, RoleConstant.ADMIN, RoleConstant.MODEL]);
 
 export const userSchema = pgTable('users',{
     email : varchar("email").notNull(),

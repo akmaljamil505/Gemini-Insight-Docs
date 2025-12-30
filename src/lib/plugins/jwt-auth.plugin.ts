@@ -31,7 +31,7 @@ export const jwtAdminAuthPlugin = (app : Elysia) => app
         if (user.role !== RoleConstant.ADMIN) {
             throw new ForbiddenException('You are not authorized to access this resource');
         }
-        return { token };
+        return verify;
     })
 
 
@@ -60,5 +60,7 @@ export const jwtPublicAuthPlugin = (app : Elysia) => app
         if (user.role !== RoleConstant.USER && user.role !== RoleConstant.ADMIN) {
             throw new ForbiddenException('You are not authorized to access this resource');
         }
-        return { token };
+        return {
+            user : verify
+        };
     })

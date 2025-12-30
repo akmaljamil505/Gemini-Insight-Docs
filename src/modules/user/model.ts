@@ -14,9 +14,10 @@ namespace UserModel {
         }),
         role : t.Enum({
             user : RoleConstant.USER,
-            admin : RoleConstant.ADMIN
+            admin : RoleConstant.ADMIN,
+            assistant : RoleConstant.MODEL,
         }, {
-            error : 'Role must be user or admin'
+            error : 'Role must be user, admin'
         }),
         name : t.String({
             minLength : 1

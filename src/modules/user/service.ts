@@ -4,11 +4,18 @@ import { userSchema } from "../../lib/db/schema/user.schema";
 import ConflictException from "../../lib/exception/conflict.exception";
 import NotFoundException from "../../lib/exception/not-found.exception";
 import UserModel from "./model";
+import RoleConstant from "../../lib/constant/role.constant";
+import BadRequestException from "../../lib/exception/bad-request.exception";
 
 export default class UserService {
     
     static async create(body : UserModel.CreateUserBody) : Promise<UserModel.Response> {
         const { email, password, role, name } = body;
+
+        if(role != RoleConstant.ADMIN && role != RoleConstant.USER) {
+            throw new BadRequestException('Invalid role');
+        }
+
         const version = new Date().getTime();
         const hashedPassword = await Bun.password.hash(password, {
             algorithm : 'bcrypt',
