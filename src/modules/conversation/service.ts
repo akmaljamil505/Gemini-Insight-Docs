@@ -48,7 +48,7 @@ export default class ConversationService {
             }
 
             if(conversation.user_id !== userId) {
-                throw new ConflictException('You do not have permission to update this conversation');
+                throw new ConflictException('You do not have permission to delete this conversation');
             }
 
             if(conversation.version !== model.version) {

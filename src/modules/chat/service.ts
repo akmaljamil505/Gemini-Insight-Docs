@@ -8,17 +8,23 @@ import Gemini from "../../lib/llm";
 import ChatModel from "./model";
 import { conversationSchema } from "../../lib/db/schema/conversation.schema";
 import NotFoundException from "../../lib/exception/not-found.exception";
+import ForbiddenException from "../../lib/exception/forbidden.exception";
 
 export default class ChatService {
 
-     static async generateChatWithGemini(body : ChatModel.ChatRequest) {
+     static async generateChatWithGemini(body : ChatModel.ChatRequest, userId : string) {
 
         const result =  await db.transaction(async (tx) => {
 
-            const conversation = await tx.select().from(conversationSchema).where(eq(conversationSchema.id, body.conversation_id)).limit(1);
-            if(conversation.length === 0) {
+            const [conversation] = await tx.select().from(conversationSchema).where(eq(conversationSchema.id, body.conversation_id)).limit(1);
+            if(!conversation) {
               throw new NotFoundException("Conversation not found");
             }
+
+            if(conversation.user_id !== userId) {
+                throw new ForbiddenException("You do not have access to this conversation");
+            }
+
             const embedding = await Gemini.embeddingContent(body.message, 'RETRIEVAL_QUERY');
             if(!embedding || !embedding.embeddings) {
               throw new Error("Failed to generate embedding");
