@@ -38,6 +38,12 @@ new Elysia()
       .use(conversationRoute)
   )
 
+  //  WEB SOCKET
+  .group("/api/v1", (user) =>
+    user
+      .use(chatSocket)
+  )
+
   // PUBLIC ROUTES
   .group("/api/v1", (publicRoutes) =>
     publicRoutes
