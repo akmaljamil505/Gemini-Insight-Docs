@@ -5,11 +5,11 @@ const supabase = createClient(storageConfig.STORAGE_URL, storageConfig.STORAGE_A
 
 export default class SupabaseStorage {
 
-    static async uploadFile(file : File, fileName : string, token : string) {
+    static async uploadFile(file : File, fileName : string) {
         const { data, error } = await supabase
             .storage
             .from(storageConfig.STORAGE_BUCKET)
-            .uploadToSignedUrl(fileName, token, file, {
+            .upload(fileName, file, {
                 upsert : true
             })
         if(error) {
@@ -18,7 +18,7 @@ export default class SupabaseStorage {
         return data.path
     }
 
-    static async generateUploadSignedUrl(path : string, expiresIn : number = 60) {
+    static async generateUploadSignedUrl(path : string) {
         const { data, error } = await supabase
             .storage
             .from(storageConfig.STORAGE_BUCKET)
@@ -29,7 +29,7 @@ export default class SupabaseStorage {
         return data.token;
     }
 
-     static async generateSignedUrl(path : string, expiresIn : number = 60) {
+    static async generateSignedUrl(path : string, expiresIn : number = 60) : Promise<string> {
         const { data, error } = await supabase
             .storage
             .from(storageConfig.STORAGE_BUCKET)
@@ -38,6 +38,17 @@ export default class SupabaseStorage {
             throw error;
         }
         return data.signedUrl;
+    }
+
+    static async deleteFile(path : string) : Promise<void> {
+        const { data, error } = await supabase
+            .storage
+            .from(storageConfig.STORAGE_BUCKET)
+            .remove([path]);
+        if(error) {
+            throw error;
+        }
+        return;
     }
 
 }

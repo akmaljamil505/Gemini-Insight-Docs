@@ -11,7 +11,12 @@ namespace DocumentModel {
         }),
     })
 
+    export const deleteDocumentBody = t.Object({
+        version : t.Number(),
+      })
+
     export type CreateDocumentBody = typeof createDocumentBody.static;
+    export type DeleteDocumentBody = typeof deleteDocumentBody.static;
 
 }
 

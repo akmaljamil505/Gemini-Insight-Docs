@@ -6,14 +6,16 @@ import Gemini from "../../lib/llm";
 import SupabaseStorage from "../../lib/storage/supabase.storage";
 import DocumentModel from "./model";
 import NotFoundException from "../../lib/exception/not-found.exception";
+import ConflictException from "../../lib/exception/conflict.exception";
+import { ContentEmbedding } from "@google/genai";
 
 export default class DocumentService {
     
      static async create(body : DocumentModel.CreateDocumentBody) {
           await db.transaction(async (trx) => {
                const { title, file } = body;
-               const signedUrl = await SupabaseStorage.generateUploadSignedUrl(file.name);
-               const filePath = await SupabaseStorage.uploadFile(file, file.name, signedUrl);
+               // const signedUrl = await SupabaseStorage.generateUploadSignedUrl(file.name);
+               const filePath = await SupabaseStorage.uploadFile(file, file.name);
                const version = Date.now();
                const [document] = await trx.insert(documentSchema).values({
                     file_path : filePath,
@@ -36,16 +38,19 @@ export default class DocumentService {
                     throw new Error('Failed to extract text from PDF');
                }
                const chunks = this.chunkText(response.text);
-               const resultEmbeddings = await Gemini.embeddingContent(chunks);
-               if (!resultEmbeddings.embeddings) {
-                    throw new Error('Failed to generate embeddings');
+               let embeddings: ContentEmbedding[] = [];
+               for(let i = 0; i < chunks.length; i += 100) {
+                    const chunk = chunks.slice(i, i + 100);
+                    const resultEmbeddings = await Gemini.embeddingContent(chunk);
+                    if (!resultEmbeddings.embeddings) {
+                         throw new Error('Failed to generate embeddings');
+                    }
+                    embeddings = [...embeddings, ...resultEmbeddings.embeddings];
                }
 
-               if(chunks.length !== resultEmbeddings.embeddings.length) {
+               if(chunks.length !== embeddings.length) {
                     throw new Error('Embeddings length does not match chunks length');
                }
-
-               const embeddings = resultEmbeddings.embeddings;
 
                type NewDocumentChunk = typeof documentChunksSchema.$inferInsert;
                const documentChunks : NewDocumentChunk[] = chunks.map((chunk, index) => ({
@@ -78,6 +83,20 @@ export default class DocumentService {
                .from(documentSchema)
                .limit(limit)
                .offset((page - 1) * limit);
+    }
+
+    static async delete(body : DocumentModel.DeleteDocumentBody, documentId : string) {
+          await db.transaction(async (trx) => {
+               const [document] = await trx.select().from(documentSchema).where(eq(documentSchema.id, documentId)).limit(1).for('update');
+               if(!document) {
+                    throw new NotFoundException("Document not found");
+               }
+               if(document.version !== body.version) {
+                    throw new ConflictException('Document version mismatch');
+               }
+               await trx.delete(documentSchema).where(eq(documentSchema.id, documentId));
+               await SupabaseStorage.deleteFile(document.file_path);
+          })
     }
 
 
