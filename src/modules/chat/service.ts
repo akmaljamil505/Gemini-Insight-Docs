@@ -1,4 +1,4 @@
-import { asc, cosineDistance, eq, gt, inArray, sql } from "drizzle-orm";
+import { asc, cosineDistance, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import RoleConstant from "../../lib/constant/role.constant";
 import db from "../../lib/db";
 import { documentSchema } from "../../lib/db/schema/document.schema";
@@ -32,10 +32,15 @@ export default class ChatService {
           }
           const similarity = sql<number>`1 - (${cosineDistance(documentChunksSchema.embedding, embeddingVector.values)})`;
           const documentsChunks = await tx
-              .select()
+              .select({
+                document_id: documentChunksSchema.document_id, 
+                content: documentChunksSchema.content, 
+                similarity, 
+                id : documentChunksSchema.id,  
+              })
               .from(documentChunksSchema)
               .where(gt(similarity, 0.5))
-              .orderBy(similarity)
+              .orderBy((t) => desc(t.similarity))
               .limit(20)
 
           const documentIds = documentsChunks.map((doc) => doc.document_id).filter((id) => id !== undefined);
