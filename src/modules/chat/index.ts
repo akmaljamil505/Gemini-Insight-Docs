@@ -1,4 +1,4 @@
-import Elysia from "elysia";
+import Elysia, { t } from "elysia";
 import ChatModel from "./model";
 import ChatService from "./service";
 import { CustomContext } from "../../lib/types/custom-context.type";
@@ -11,12 +11,14 @@ export const chatSocket = new Elysia({
 })
     .ws('/socket', {
         body: ChatModel.chatRequest,
+        query : t.Object({
+            token : t.String()
+        }),
         async message(ws) {
             const { body, data } = ws;
             try 
             {
-                if(!data.request.headers.get('Authorization')) throw new AuthenticationException("Authorization header is missing");
-                const token = data.request.headers.get('Authorization')!.split(' ')[1];
+                const token = data.query.token;
                 if(!token) throw new AuthenticationException("Token is missing");
                 const verify = JwtHelper.verifyToken(token) as CommonJWTPayload;
                 const response = await ChatService.generateChatWithGemini(body, verify.id);
